@@ -3,10 +3,10 @@ import type { Fixture } from '../types/Fixture';
 import ConfidenceBadge from './ConfidenceBadge';
 
 interface Props {
-  fixtures: Fixture[];
-  onDeepVerify: () => void;
+  fixtures:      Fixture[];
+  onDeepVerify:  () => void;
   deepVerifying: boolean;
-  deepVerified: boolean;
+  deepVerified:  boolean;
 }
 
 const RankBadge: React.FC<{ rank: number }> = ({ rank }) => {
@@ -69,7 +69,8 @@ const BestListCard: React.FC<Props> = ({ fixtures, onDeepVerify, deepVerifying, 
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               Deep Verify List
             </>
@@ -80,12 +81,13 @@ const BestListCard: React.FC<Props> = ({ fixtures, onDeepVerify, deepVerifying, 
       {/* Fixture cards */}
       <div className="divide-y divide-navy-700/50">
         {fixtures.map((fx, idx) => {
-          const barWidth = Math.min(100, fx.confidenceScore);
+          const barWidth  = Math.min(100, fx.confidenceScore);
           const barColour = fx.confidenceScore >= 80 ? 'bg-confidence-strong'
                           : fx.confidenceScore >= 70 ? 'bg-confidence-watch'
                           : fx.confidenceScore >= 60 ? 'bg-confidence-lean'
                           : 'bg-confidence-reject';
-          const glowClass  = fx.confidenceScore >= 80 ? 'glow-green' : '';
+          const glowClass = fx.confidenceScore >= 80 ? 'glow-green' : '';
+          const flags     = fx.riskFlags ?? [];
 
           return (
             <div
@@ -96,30 +98,33 @@ const BestListCard: React.FC<Props> = ({ fixtures, onDeepVerify, deepVerifying, 
                 <RankBadge rank={idx + 1} />
 
                 <div className="flex-1 min-w-0">
-                  {/* Match title */}
+                  {/* Match header */}
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className="font-bold text-gray-100 text-sm">
                       {fx.homeTeam}
                       <span className="text-gray-500 font-normal mx-1.5">vs</span>
                       {fx.awayTeam}
                     </span>
-                    <span className="text-xs text-gray-600 font-mono">{fx.timeGMT} GMT</span>
+                    {fx.kickoffTime && (
+                      <span className="text-xs text-gray-600 font-mono">{fx.kickoffTime}</span>
+                    )}
                     {fx.league && (
                       <span className="text-xs bg-navy-600/80 text-gray-500 px-1.5 py-0.5 rounded font-mono border border-navy-400/30">
                         {fx.league}
                       </span>
                     )}
-                    {fx.deepVerified && (
-                      <span className="text-xs text-accent-cyan font-semibold">✓ Verified</span>
-                    )}
                   </div>
 
                   {/* Stats row */}
                   <div className="flex flex-wrap items-center gap-3 text-xs mb-2.5">
-                    <span className="font-bold text-green-400">Home: {fx.homeWinProb}%</span>
-                    <span className="text-gray-500">Goals avg: {fx.avgGoals > 0 ? fx.avgGoals.toFixed(2) : '—'}</span>
-                    <span className="text-gray-400">Predicted: <strong className="text-gray-200">{fx.correctScore || '—'}</strong></span>
-                    <span className="text-gray-600">Draw: {fx.drawProb}%</span>
+                    <span className="font-bold text-green-400">Home: {fx.homeWinProb ?? '—'}%</span>
+                    <span className="text-gray-500">
+                      Goals avg: {fx.avgGoals !== null ? fx.avgGoals.toFixed(2) : '—'}
+                    </span>
+                    <span className="text-gray-400">
+                      Predicted: <strong className="text-gray-200">{fx.predictedScore || '—'}</strong>
+                    </span>
+                    <span className="text-gray-600">Draw: {fx.drawProb ?? '—'}%</span>
                     {fx.odds && <span className="text-gray-600">Odds: {fx.odds}</span>}
                   </div>
 
@@ -134,15 +139,10 @@ const BestListCard: React.FC<Props> = ({ fixtures, onDeepVerify, deepVerifying, 
                     <ConfidenceBadge score={fx.confidenceScore} />
                   </div>
 
-                  {/* Reason */}
-                  {fx.reason && (
-                    <p className="text-xs text-gray-500 leading-relaxed">{fx.reason}</p>
-                  )}
-
                   {/* Risk flags */}
-                  {fx.flags.length > 0 && (
+                  {flags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {fx.flags.map(f => (
+                      {flags.map(f => (
                         <span
                           key={f}
                           className="text-xs text-amber-400 bg-amber-950/40 border border-amber-800/40 rounded px-1.5 py-0.5"
@@ -151,6 +151,18 @@ const BestListCard: React.FC<Props> = ({ fixtures, onDeepVerify, deepVerifying, 
                         </span>
                       ))}
                     </div>
+                  )}
+
+                  {/* Forebet link */}
+                  {fx.href && (
+                    <a
+                      href={`https://www.forebet.com${fx.href}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-2 text-xs text-accent-cyan hover:underline"
+                    >
+                      View on Forebet →
+                    </a>
                   )}
                 </div>
               </div>

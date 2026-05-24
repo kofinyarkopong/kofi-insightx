@@ -15,6 +15,7 @@ import { deepVerifyShortlist } from '../deepVerify/deepVerifier';
 import { readCache, writeCache, clearCache } from '../fetcher/cache';
 import type { FetchResult } from '../types/Fixture';
 import type { Fixture } from '../types/Fixture';
+import { upsertFixtures } from '../lib/supabase';
 
 const router = Router();
 
@@ -122,7 +123,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
 // ── POST /api/forebet/manual ──────────────────────────────────────────────────
 
-router.post('/manual', (req: Request, res: Response): void => {
+router.post('/manual', async (req: Request, res: Response): Promise<void> => {
   const { text, date, penaliseWomens } = req.body as {
     text: string;
     date?: string;
@@ -138,6 +139,16 @@ router.post('/manual', (req: Request, res: Response): void => {
   const { fixtures, needsReview, warnings } = parseManualPaste(text, targetDate, penaliseWomens ?? false);
   const allFixtures = [...fixtures, ...needsReview];
 
+  // Write to Supabase so the frontend reads it immediately
+  let saved = 0;
+  if (allFixtures.length > 0) {
+    try {
+      saved = await upsertFixtures(allFixtures as unknown as Record<string, unknown>[], targetDate);
+    } catch (err) {
+      warnings.push(`Supabase upsert failed: ${(err as Error).message}`);
+    }
+  }
+
   const result: FetchResult = {
     fixtures: allFixtures,
     fetchedAt: new Date().toISOString(),
@@ -145,7 +156,7 @@ router.post('/manual', (req: Request, res: Response): void => {
     totalParsed: allFixtures.length,
     fromCache: false,
     method: 'manual',
-    warnings,
+    warnings: [...warnings, `${saved} fixtures saved to Supabase.`],
   };
 
   res.json(result);

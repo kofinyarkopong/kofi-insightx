@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sparticuz/chromium-min": "^148.0.0",
+    "@supabase/supabase-js": "^2.106.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

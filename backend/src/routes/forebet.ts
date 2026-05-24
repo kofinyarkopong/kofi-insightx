@@ -53,28 +53,18 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   let method: FetchResult['method'] = 'playwright';
   const warnings: string[] = [];
 
-  // On Vercel, Playwright (headless Chromium) is not available.
-  // Skip straight to the Cheerio static fetch.
-  const isVercel = !!process.env.VERCEL;
-
-  if (isVercel) {
-    warnings.push('Running on Vercel — Playwright not available. Using static fetch.');
-  }
-
-  // 1. Try Playwright (local only)
-  if (!isVercel) {
-    try {
-      console.log(`[API] Fetching ${dateParam} via Playwright`);
-      const pw = await fetchWithPlaywright(dateParam);
-      html = pw.html;
-      warnings.push(...pw.warnings);
-      if (pw.clickCount > 0) {
-        warnings.push(`Loaded full catalogue via ${pw.clickCount} ltodrows click(s).`);
-      }
-    } catch (pwErr) {
-      warnings.push(`Playwright failed: ${(pwErr as Error).message}. Falling back to static fetch.`);
-      console.error('[API] Playwright error:', (pwErr as Error).message);
+  // 1. Try Playwright (local and Vercel — @sparticuz/chromium-min on Vercel)
+  try {
+    console.log(`[API] Fetching ${dateParam} via Playwright`);
+    const pw = await fetchWithPlaywright(dateParam);
+    html = pw.html;
+    warnings.push(...pw.warnings);
+    if (pw.clickCount > 0) {
+      warnings.push(`Loaded full catalogue via ${pw.clickCount} ltodrows click(s).`);
     }
+  } catch (pwErr) {
+    warnings.push(`Playwright failed: ${(pwErr as Error).message}. Falling back to static fetch.`);
+    console.error('[API] Playwright error:', (pwErr as Error).message);
   }
 
   // 2. Try Cheerio static fetch (always attempted if Playwright didn't succeed)

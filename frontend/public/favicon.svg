@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#04060f"/>
+  <rect x="1" y="1" width="30" height="30" rx="6" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="16" cy="13" r="7" fill="#00e5ff"/>
+  <circle cx="16" cy="13" r="7" fill="none" stroke="#04060f" stroke-width="0.8"/>
+  <!-- pentagon pattern -->
+  <polygon points="16,9.5 17.9,12.3 16,14 14.1,12.3" fill="#04060f" opacity="0.6"/>
+  <line x1="16" y1="9.5" x2="16" y2="6.2" stroke="#04060f" stroke-width="0.7" opacity="0.5"/>
+  <line x1="17.9" y1="12.3" x2="20.5" y2="11.2" stroke="#04060f" stroke-width="0.7" opacity="0.5"/>
+  <line x1="16" y1="14" x2="16.5" y2="16.9" stroke="#04060f" stroke-width="0.7" opacity="0.5"/>
+  <line x1="14.1" y1="12.3" x2="11.5" y2="11.2" stroke="#04060f" stroke-width="0.7" opacity="0.5"/>
+  <!-- K letterform -->
+  <text x="16" y="27" font-family="Arial Black, sans-serif" font-weight="900" font-size="9" fill="#00e5ff" text-anchor="middle">K</text>
+</svg>

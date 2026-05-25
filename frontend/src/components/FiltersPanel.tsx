@@ -8,6 +8,7 @@ interface Props {
   listACounts: number;
   listBCount: number;
   listCCount: number;
+  onClose?: () => void;   // provided in mobile drawer mode
 }
 
 const Toggle: React.FC<{
@@ -68,18 +69,31 @@ const SectionHead: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </h3>
 );
 
-const FiltersPanel: React.FC<Props> = ({ filters, update, onReset, listACounts, listBCount, listCCount }) => {
+const FiltersPanel: React.FC<Props> = ({ filters, update, onReset, listACounts, listBCount, listCCount, onClose }) => {
   return (
     <aside className="glass-card rounded-xl overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-navy-400/40 flex items-center justify-between">
         <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400">Filters</h2>
-        <button
-          onClick={onReset}
-          className="text-xs text-accent-cyan hover:text-cyan-300 transition-colors font-medium"
-        >
-          Reset
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onReset}
+            className="text-xs text-accent-cyan hover:text-cyan-300 transition-colors font-medium"
+          >
+            Reset
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-100 transition-colors p-1 rounded-lg hover:bg-navy-600/60"
+              aria-label="Close filters"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* List counts */}

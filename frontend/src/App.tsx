@@ -18,10 +18,10 @@ const StatCard: React.FC<{
   accent?: string;
   sub?: string;
 }> = ({ label, value, accent = 'text-gray-100', sub }) => (
-  <div className="glass-card rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[100px] flex-1">
-    <span className={`text-2xl font-extrabold tracking-tight ${accent}`}>{value}</span>
-    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
-    {sub && <span className="text-xs text-gray-600">{sub}</span>}
+  <div className="glass-card rounded-xl px-3 py-2.5 flex flex-col gap-0.5 min-w-0 flex-1">
+    <span className={`text-xl sm:text-2xl font-extrabold tracking-tight ${accent}`}>{value}</span>
+    <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider leading-tight">{label}</span>
+    {sub && <span className="text-[10px] text-gray-600">{sub}</span>}
   </div>
 );
 
@@ -32,7 +32,7 @@ const TierBadge: React.FC<{
   colour: string;
   count?: number;
 }> = ({ label, range, colour, count }) => (
-  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${colour}`}>
+  <div className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border ${colour}`}>
     <div className="text-center">
       <p className="text-xs font-extrabold tracking-wider">{label}</p>
       <p className="text-xs opacity-60">{range}</p>
@@ -44,8 +44,9 @@ const TierBadge: React.FC<{
 );
 
 const App: React.FC = () => {
-  const [showManual, setShowManual] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('listC');
+  const [showManual, setShowManual]   = useState(false);
+  const [activeTab, setActiveTab]     = useState<Tab>('listC');
+  const [showFilters, setShowFilters] = useState(false);
 
   const {
     fixtures, status, statusMessage, error, warnings, date, fetchResult, deepVerified,
@@ -55,51 +56,97 @@ const App: React.FC = () => {
   const { filters, updateFilter, resetFilters, listA, listB, listC, needsReview } =
     useFilters(fixtures);
 
-  const busy = ['fetching', 'expanding', 'parsing', 'deep_verifying'].includes(status);
+  const busy          = ['fetching', 'expanding', 'parsing', 'deep_verifying'].includes(status);
   const deepVerifying = status === 'deep_verifying';
 
-  const handleFetch       = () => fetch(false, filters.penaliseWomens);
-  const handleRefresh     = () => refreshCache();
-  const handleManual      = (text: string) => submitManual(text, filters.penaliseWomens);
-  const handleDeepVerify  = () => runDeepVerify(listC.slice(0, 10));
+  const handleFetch      = () => fetch(false, filters.penaliseWomens);
+  const handleRefresh    = () => refreshCache();
+  const handleManual     = (text: string) => submitManual(text, filters.penaliseWomens);
+  const handleDeepVerify = () => runDeepVerify(listC.slice(0, 10));
 
-  // Derived confidence counts
   const strongCount    = fixtures.filter(f => f.confidenceScore >= 80).length;
   const watchlistCount = fixtures.filter(f => f.confidenceScore >= 70 && f.confidenceScore < 80).length;
   const leanCount      = fixtures.filter(f => f.confidenceScore >= 60 && f.confidenceScore < 70).length;
 
-  const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: 'listC', label: 'Best Shortlist',      count: listC.length    },
-    { key: 'listB', label: 'Stricter Filter B',   count: listB.length    },
-    { key: 'listA', label: 'Full Qualifying List', count: listA.length   },
-    { key: 'review', label: 'Needs Review',        count: needsReview.length },
+  const tabs: { key: Tab; label: string; shortLabel: string; count: number }[] = [
+    { key: 'listC',  label: 'Best Shortlist',       shortLabel: 'Best',    count: listC.length     },
+    { key: 'listB',  label: 'Stricter Filter B',    shortLabel: 'List B',  count: listB.length     },
+    { key: 'listA',  label: 'Full Qualifying List', shortLabel: 'List A',  count: listA.length     },
+    { key: 'review', label: 'Needs Review',         shortLabel: 'Review',  count: needsReview.length },
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
+
       {/* ── Header ── */}
       <header className="sticky top-0 z-30 border-b border-navy-600/40"
         style={{ background: 'linear-gradient(90deg, #04060f 0%, #0a1428 50%, #04060f 100%)' }}>
-        <div className="max-w-[1700px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {/* Logo mark */}
-            <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl">⚽</span>
+        <div className="max-w-[1700px] mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg sm:text-xl">⚽</span>
             </div>
             <div>
-              <h1 className="font-extrabold text-gray-100 text-xl leading-tight tracking-tight">
+              <h1 className="font-extrabold text-gray-100 text-base sm:text-xl leading-tight tracking-tight">
                 Dr Kofi InsightX
               </h1>
-              <p className="text-xs text-gray-500 tracking-widest uppercase">
+              <p className="text-[10px] sm:text-xs text-gray-500 tracking-widest uppercase hidden sm:block">
                 Football Intelligence Platform
               </p>
             </div>
           </div>
-          <DateSelector date={date} onChange={setDate} disabled={busy} />
+          <div className="flex items-center gap-2">
+            <DateSelector date={date} onChange={setDate} disabled={busy} />
+            {/* Mobile filter toggle */}
+            <button
+              onClick={() => setShowFilters(true)}
+              className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-navy-400/60
+                text-gray-400 hover:text-accent-cyan hover:border-accent-cyan transition-all text-xs font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+              </svg>
+              <span>Filters</span>
+              {(listCCount => listCCount > 0
+                ? <span className="bg-accent-cyan text-navy-900 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-extrabold">{listCCount}</span>
+                : null)(listC.length)}
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-[1700px] mx-auto px-4 py-5 space-y-5 flex-1 w-full">
+      {/* ── Mobile filter drawer (slide up from bottom) ── */}
+      {showFilters && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowFilters(false)}
+          />
+          {/* Drawer */}
+          <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl overflow-hidden
+            flex flex-col" style={{ background: '#0a0e1a' }}>
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-navy-400/60" />
+            </div>
+            <div className="overflow-y-auto flex-1 pb-safe">
+              <FiltersPanel
+                filters={filters}
+                update={updateFilter}
+                onReset={resetFilters}
+                listACounts={listA.length}
+                listBCount={listB.length}
+                listCCount={listC.length}
+                onClose={() => setShowFilters(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-[1700px] mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 sm:space-y-5 flex-1 w-full">
 
         {/* ── Fetch panel ── */}
         <FetchPanel
@@ -115,20 +162,22 @@ const App: React.FC = () => {
         />
 
         {/* ── Stats row ── */}
-        <div className="flex flex-wrap gap-3">
-          <StatCard label="Total Scraped"  value={fixtures.length}    accent="text-gray-100" />
-          <StatCard label="Filter A ≥45%"  value={listA.length}       accent="text-accent-cyan" />
-          <StatCard label="Filter B"       value={listB.length}       accent="text-accent-blue" />
-          <StatCard label="Strong"         value={strongCount}        accent="text-confidence-strong" sub="80-100" />
-          <StatCard label="Watchlist"      value={watchlistCount}     accent="text-confidence-watch"  sub="70-79" />
-          <StatCard label="Lean"           value={leanCount}          accent="text-confidence-lean"   sub="60-69" />
-          <StatCard label="Needs Review"   value={needsReview.length} accent="text-gray-400" />
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:flex gap-2">
+          <StatCard label="Scraped"    value={fixtures.length}    accent="text-gray-100" />
+          <StatCard label="List A"     value={listA.length}       accent="text-accent-cyan" />
+          <StatCard label="List B"     value={listB.length}       accent="text-accent-blue" />
+          <StatCard label="Best C"     value={listC.length}       accent="text-confidence-strong" />
+          <StatCard label="Strong"     value={strongCount}        accent="text-confidence-strong" sub="80-100" />
+          <StatCard label="Watchlist"  value={watchlistCount}     accent="text-confidence-watch"  sub="70-79" />
+          <StatCard label="Lean"       value={leanCount}          accent="text-confidence-lean"   sub="60-69" />
+          <StatCard label="Review"     value={needsReview.length} accent="text-gray-400" />
         </div>
 
         {/* ── Main layout ── */}
         <div className="flex gap-5 items-start">
-          {/* Sidebar filters */}
-          <div className="w-64 flex-shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
+
+          {/* Desktop sidebar */}
+          <div className="hidden lg:block w-64 flex-shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
             <FiltersPanel
               filters={filters}
               update={updateFilter}
@@ -148,43 +197,43 @@ const App: React.FC = () => {
             )}
 
             {/* Confidence tier legend */}
-            <div className="glass-card rounded-xl px-4 py-3">
+            <div className="glass-card rounded-xl px-3 sm:px-4 py-3">
               <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-2.5">
-                Confidence Model — Tier Thresholds
+                Confidence Tiers
               </p>
               <div className="flex flex-wrap gap-2">
-                <TierBadge label="STRONG"    range="80–100" colour="border-green-700/50 text-green-300   bg-green-950/30"  count={strongCount} />
-                <TierBadge label="WATCH"     range="70–79"  colour="border-amber-700/50 text-amber-300   bg-amber-950/30"  count={watchlistCount} />
-                <TierBadge label="LEAN"      range="60–69"  colour="border-orange-700/50 text-orange-300 bg-orange-950/30" count={leanCount} />
-                <TierBadge label="REJECT"    range="&lt;60" colour="border-red-800/50  text-red-400     bg-red-950/30" />
-                <span className="ml-auto self-center text-xs text-gray-600 italic">
-                  Weighted model · form proxies only
-                </span>
+                <TierBadge label="STRONG"  range="80–100" colour="border-green-700/50 text-green-300   bg-green-950/30"  count={strongCount} />
+                <TierBadge label="WATCH"   range="70–79"  colour="border-amber-700/50 text-amber-300   bg-amber-950/30"  count={watchlistCount} />
+                <TierBadge label="LEAN"    range="60–69"  colour="border-orange-700/50 text-orange-300 bg-orange-950/30" count={leanCount} />
+                <TierBadge label="REJECT"  range="&lt;60" colour="border-red-800/50  text-red-400     bg-red-950/30" />
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-1 p-1 glass-card rounded-xl w-fit">
-              {tabs.map(({ key, label, count }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveTab(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2
-                    ${activeTab === key
-                      ? 'bg-accent-cyan text-navy-900 shadow-lg shadow-cyan-900/30'
-                      : 'text-gray-500 hover:text-gray-300 hover:bg-navy-600/60'
-                    }`}
-                >
-                  {label}
-                  <span className={`text-xs rounded-full px-1.5 py-0.5 font-bold
-                    ${activeTab === key
-                      ? 'bg-navy-900/40 text-navy-900'
-                      : 'bg-navy-500/60 text-gray-500'
-                    }`}>
-                    {count}
-                  </span>
-                </button>
-              ))}
+            {/* Tabs — horizontally scrollable on mobile */}
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <div className="flex gap-1 p-1 glass-card rounded-xl w-max sm:w-fit min-w-full sm:min-w-0">
+                {tabs.map(({ key, label, shortLabel, count }) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap
+                      ${activeTab === key
+                        ? 'bg-accent-cyan text-navy-900 shadow-lg shadow-cyan-900/30'
+                        : 'text-gray-500 hover:text-gray-300 hover:bg-navy-600/60'
+                      }`}
+                  >
+                    <span className="sm:hidden">{shortLabel}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className={`text-xs rounded-full px-1.5 py-0.5 font-bold
+                      ${activeTab === key
+                        ? 'bg-navy-900/40 text-navy-900'
+                        : 'bg-navy-500/60 text-gray-500'
+                      }`}>
+                      {count}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Tab content */}
@@ -236,7 +285,6 @@ const App: React.FC = () => {
         </p>
       </footer>
 
-      {/* Manual paste modal */}
       {showManual && (
         <ManualPasteModal
           onSubmit={handleManual}

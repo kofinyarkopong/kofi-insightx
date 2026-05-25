@@ -104,18 +104,18 @@ const FixtureTable: React.FC<Props> = ({
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-gray-500 border-b border-navy-400/40 bg-navy-800/60">
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">Time</th>
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">League</th>
-                <th className="px-3 py-2.5 text-left">Home Team</th>
-                <th className="px-3 py-2.5 text-left">Away Team</th>
-                <th className="px-3 py-2.5 text-center">H%</th>
-                <th className="px-3 py-2.5 text-center">D%</th>
-                <th className="px-3 py-2.5 text-center">A%</th>
-                <th className="px-3 py-2.5 text-center">Pred</th>
-                <th className="px-3 py-2.5 text-center">Score</th>
-                {!compact && <th className="px-3 py-2.5 text-center">Avg G</th>}
-                <th className="px-3 py-2.5 text-center">Conf</th>
-                {!compact && <th className="px-3 py-2.5 text-left">Flags</th>}
+                <th className="px-2 sm:px-3 py-2.5 text-left whitespace-nowrap">Time</th>
+                <th className="hidden sm:table-cell px-3 py-2.5 text-left whitespace-nowrap">League</th>
+                <th className="px-2 sm:px-3 py-2.5 text-left">Home</th>
+                <th className="px-2 sm:px-3 py-2.5 text-left">Away</th>
+                <th className="px-2 sm:px-3 py-2.5 text-center">H%</th>
+                <th className="hidden sm:table-cell px-3 py-2.5 text-center">D%</th>
+                <th className="hidden sm:table-cell px-3 py-2.5 text-center">A%</th>
+                <th className="px-2 sm:px-3 py-2.5 text-center">Pred</th>
+                <th className="hidden sm:table-cell px-3 py-2.5 text-center">Score</th>
+                {!compact && <th className="hidden md:table-cell px-3 py-2.5 text-center">Avg G</th>}
+                <th className="px-2 sm:px-3 py-2.5 text-center">Conf</th>
+                {!compact && <th className="hidden md:table-cell px-3 py-2.5 text-left">Flags</th>}
               </tr>
             </thead>
             <tbody>
@@ -132,27 +132,27 @@ const FixtureTable: React.FC<Props> = ({
                           : 'table-row-dark hover:bg-navy-600/40'
                         }`}
                     >
-                      <td className="px-3 py-2 font-mono text-xs text-gray-500 whitespace-nowrap">{fx.timeGMT}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 sm:px-3 py-2.5 font-mono text-xs text-gray-500 whitespace-nowrap">{fx.timeGMT}</td>
+                      <td className="hidden sm:table-cell px-3 py-2.5">
                         <span className="text-xs bg-navy-600/80 text-gray-400 rounded px-1.5 py-0.5 font-mono whitespace-nowrap">
                           {fx.league || '—'}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-semibold text-gray-100 max-w-[140px] truncate">{fx.homeTeam}</td>
-                      <td className="px-3 py-2 text-gray-400 max-w-[140px] truncate">{fx.awayTeam}</td>
-                      <td className="px-3 py-2 text-center font-bold text-green-400">{fx.homeWinProb}%</td>
-                      <td className="px-3 py-2 text-center text-gray-500">{fx.drawProb}%</td>
-                      <td className="px-3 py-2 text-center text-red-400">{fx.awayWinProb}%</td>
-                      <td className="px-3 py-2 text-center"><PredBadge pred={fx.prediction} /></td>
-                      <td className="px-3 py-2 text-center font-mono text-xs font-bold text-gray-300">{fx.correctScore || '—'}</td>
+                      <td className="px-2 sm:px-3 py-2.5 font-semibold text-gray-100 max-w-[90px] sm:max-w-[140px] truncate text-xs sm:text-sm">{fx.homeTeam}</td>
+                      <td className="px-2 sm:px-3 py-2.5 text-gray-400 max-w-[90px] sm:max-w-[140px] truncate text-xs sm:text-sm">{fx.awayTeam}</td>
+                      <td className="px-2 sm:px-3 py-2.5 text-center font-bold text-green-400 text-xs sm:text-sm">{fx.homeWinProb}%</td>
+                      <td className="hidden sm:table-cell px-3 py-2.5 text-center text-gray-500">{fx.drawProb}%</td>
+                      <td className="hidden sm:table-cell px-3 py-2.5 text-center text-red-400">{fx.awayWinProb}%</td>
+                      <td className="px-2 sm:px-3 py-2.5 text-center"><PredBadge pred={fx.prediction} /></td>
+                      <td className="hidden sm:table-cell px-3 py-2.5 text-center font-mono text-xs font-bold text-gray-300">{fx.correctScore || '—'}</td>
                       {!compact && (
-                        <td className="px-3 py-2 text-center text-gray-500">
+                        <td className="hidden md:table-cell px-3 py-2.5 text-center text-gray-500">
                           {fx.avgGoals > 0 ? fx.avgGoals.toFixed(2) : '—'}
                         </td>
                       )}
-                      <td className="px-3 py-2 text-center"><ConfidenceBadge score={fx.confidenceScore} /></td>
+                      <td className="px-2 sm:px-3 py-2.5 text-center"><ConfidenceBadge score={fx.confidenceScore} /></td>
                       {!compact && (
-                        <td className="px-3 py-2">
+                        <td className="hidden md:table-cell px-3 py-2.5">
                           <div className="flex flex-wrap gap-1">
                             {fx.flags.slice(0, 2).map(flagChip)}
                             {fx.flags.length > 2 && (

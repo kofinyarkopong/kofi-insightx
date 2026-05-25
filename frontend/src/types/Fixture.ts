@@ -1,70 +1,95 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Fixture data model — mirrors the Supabase `matches` table schema
+// Core Fixture data model  (mirrors backend/src/types/Fixture.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface Fixture {
-  id:             string;
-  date:           string;
-  kickoffTime:    string | null;
-  homeTeam:       string;
-  awayTeam:       string;
-  league:         string | null;
-  href:           string | null;
+  id: string;
+  source: 'forebet';
+  sourceUrl: string;
+  date: string;
+  timeGMT: string;
+  league: string;
+  competition?: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeWinProb: number;
+  drawProb: number;
+  awayWinProb: number;
+  prediction: string;
+  correctScore: string;
+  avgGoals: number;
+  odds?: number;
+  status: 'upcoming' | 'live' | 'half_time' | 'finished' | 'unknown';
+  minute?: string;
 
-  homeWinProb:    number | null;
-  drawProb:       number | null;
-  awayWinProb:    number | null;
+  isCup: boolean;
+  isDerbyRisk: boolean;
+  isSecondLegRisk: boolean;
+  isRelegationTrapRisk: boolean;
+  isYouthOrReserve: boolean;
+  isWomen: boolean;
 
-  predictedScore: string | null;
-  avgGoals:       number | null;
-  prediction:     string | null;
-  odds:           string | null;
-
+  lowBlockRisk: number;
+  motivationScore: number;
+  formProxyScore: number;
+  homeScoringScore: number;
+  awayConcedingScore: number;
+  awayWeaknessScore: number;
+  riskPenalty: number;
   confidenceScore: number;
-  confidenceTier:  'strong' | 'watch' | 'lean' | 'reject';
-  scoreBreakdown:  Record<string, number> | null;
-  riskFlags:       string[];
+  parseConfidence: number;
 
-  filterA:       boolean;
-  filterB:       boolean;
-  bestShortlist: boolean;
-  needsReview:   boolean;
+  flags: string[];
+  reason: string;
 
-  enriched:       boolean;
-  enrichmentData: Record<string, unknown> | null;
-
-  source:    'playwright' | 'manual';
-  scrapedAt: string;
+  matchUrl?: string;
+  deepVerified?: boolean;
 }
-
-// ── Legacy API result (used by manual paste backend route) ────────────────────
 
 export interface FetchResult {
-  fixtures:    Fixture[];
-  fetchedAt:   string;
-  date:        string;
+  fixtures: Fixture[];
+  fetchedAt: string;
+  date: string;
   totalParsed: number;
-  fromCache:   boolean;
-  method:      'playwright' | 'cheerio' | 'manual' | 'cache';
-  warnings:    string[];
+  fromCache: boolean;
+  method: 'playwright' | 'cheerio' | 'manual' | 'cache';
+  warnings: string[];
 }
 
-// ── Filter settings ───────────────────────────────────────────────────────────
-
 export interface FilterSettings {
-  minHomeWinProb:    number;
+  minHomeWinProb: number;
+  minAvgGoals: number;
   minConfidenceScore: number;
-  bestListSize:      number;
-  hideWomens:        boolean;
-  leagueSearch:      string;
-  penaliseWomens:    boolean;
+  bestListSize: number;
+  upcomingOnly: boolean;
+  excludeDerbies: boolean;
+  excludeCupsAndSecondLegs: boolean;
+  excludeRelegationTraps: boolean;
+  requirePredictedHomeWin: boolean;
+  requireOverTwoFive: boolean;
+  hideYouthReserve: boolean;
+  hideWomens: boolean;
+  includeCups: boolean;
+  includeLowConfidenceParsed: boolean;
+  leagueSearch: string;
+  penaliseWomens: boolean;
 }
 
 export const DEFAULT_FILTERS: FilterSettings = {
-  minHomeWinProb:    45,
-  minConfidenceScore: 60,
-  bestListSize:      15,
-  hideWomens:        false,
-  leagueSearch:      '',
-  penaliseWomens:    false,
+  minHomeWinProb: 45,
+  minAvgGoals: 2.5,
+  minConfidenceScore: 70,
+  bestListSize: 8,
+  upcomingOnly: true,
+  excludeDerbies: true,
+  excludeCupsAndSecondLegs: true,
+  excludeRelegationTraps: true,
+  requirePredictedHomeWin: true,
+  requireOverTwoFive: true,
+  hideYouthReserve: true,
+  hideWomens: false,
+  includeCups: false,
+  includeLowConfidenceParsed: false,
+  leagueSearch: '',
+  penaliseWomens: false,
 };

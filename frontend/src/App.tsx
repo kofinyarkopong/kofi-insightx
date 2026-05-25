@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import DateSelector from './components/DateSelector';
 import FetchPanel from './components/FetchPanel';
 import FiltersPanel from './components/FiltersPanel';
@@ -6,8 +6,7 @@ import FixtureTable from './components/FixtureTable';
 import BestListCard from './components/BestListCard';
 import ManualPasteModal from './components/ManualPasteModal';
 import ExportBar from './components/ExportBar';
-import { useMatches } from './hooks/useMatches';
-import { useScrapeQueue } from './hooks/useScrapeQueue';
+import { useForebetData } from './hooks/useForebetData';
 import { useFilters } from './hooks/useFilters';
 
 type Tab = 'listC' | 'listA' | 'listB' | 'review';
@@ -26,7 +25,7 @@ const StatCard: React.FC<{
   </div>
 );
 
-// ── Confidence tier badge ──────────────────────────────────────────────────────
+// ── Confidence tier row ────────────────────────────────────────────────────────
 const TierBadge: React.FC<{
   label: string;
   range: string;
@@ -46,43 +45,34 @@ const TierBadge: React.FC<{
 
 const App: React.FC = () => {
   const [showManual, setShowManual] = useState(false);
-  const [activeTab,  setActiveTab]  = useState<Tab>('listC');
+  const [activeTab, setActiveTab] = useState<Tab>('listC');
 
-  // Today's date as default
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const {
+    fixtures, status, statusMessage, error, warnings, date, fetchResult, deepVerified,
+    setDate, fetch, submitManual, runDeepVerify, refreshCache,
+  } = useForebetData();
 
-  // Data from Supabase
-  const { fixtures, loading, error, totalParsed, refresh } = useMatches(date);
-
-  // Scrape queue — triggers job-watcher.js on the Mac
-  const { job, status: jobStatus, triggerScrape } = useScrapeQueue(date, refresh);
-
-  // Filters + list derivations
   const { filters, updateFilter, resetFilters, listA, listB, listC, needsReview } =
     useFilters(fixtures);
 
-  const busy = loading || jobStatus === 'pending' || jobStatus === 'running';
+  const busy = ['fetching', 'expanding', 'parsing', 'deep_verifying'].includes(status);
+  const deepVerifying = status === 'deep_verifying';
 
-  const handleRunScraper = useCallback(() => triggerScrape(date), [date, triggerScrape]);
-  const handleRefresh    = useCallback(() => refresh(), [refresh]);
+  const handleFetch       = () => fetch(false, filters.penaliseWomens);
+  const handleRefresh     = () => refreshCache();
+  const handleManual      = (text: string) => submitManual(text, filters.penaliseWomens);
+  const handleDeepVerify  = () => runDeepVerify(listC.slice(0, 10));
 
-  const handleManualSubmit = useCallback((_text: string) => {
-    // Manual paste is handled by the backend, which writes to Supabase.
-    // After the modal closes, refresh to pick up the new rows.
-    setShowManual(false);
-    setTimeout(() => refresh(), 1500);
-  }, [refresh]);
-
-  // Confidence counts
+  // Derived confidence counts
   const strongCount    = fixtures.filter(f => f.confidenceScore >= 80).length;
   const watchlistCount = fixtures.filter(f => f.confidenceScore >= 70 && f.confidenceScore < 80).length;
   const leanCount      = fixtures.filter(f => f.confidenceScore >= 60 && f.confidenceScore < 70).length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: 'listC',  label: 'Best Shortlist',       count: listC.length        },
-    { key: 'listB',  label: 'Stricter Filter B',    count: listB.length        },
-    { key: 'listA',  label: 'Full Qualifying List', count: listA.length        },
-    { key: 'review', label: 'Needs Review',          count: needsReview.length },
+    { key: 'listC', label: 'Best Shortlist',      count: listC.length    },
+    { key: 'listB', label: 'Stricter Filter B',   count: listB.length    },
+    { key: 'listA', label: 'Full Qualifying List', count: listA.length   },
+    { key: 'review', label: 'Needs Review',        count: needsReview.length },
   ];
 
   return (
@@ -92,6 +82,7 @@ const App: React.FC = () => {
         style={{ background: 'linear-gradient(90deg, #04060f 0%, #0a1428 50%, #04060f 100%)' }}>
         <div className="max-w-[1700px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
+            {/* Logo mark */}
             <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center flex-shrink-0">
               <span className="text-xl">⚽</span>
             </div>
@@ -110,24 +101,18 @@ const App: React.FC = () => {
 
       <div className="max-w-[1700px] mx-auto px-4 py-5 space-y-5 flex-1 w-full">
 
-        {/* ── Fetch / scrape panel ── */}
+        {/* ── Fetch panel ── */}
         <FetchPanel
-          date={date}
-          jobStatus={jobStatus}
-          jobProgress={job?.progress ?? null}
-          jobError={job?.errorMessage ?? null}
-          fixtureCount={totalParsed}
-          loading={loading}
-          onRunScraper={handleRunScraper}
+          status={status}
+          statusMessage={statusMessage}
+          error={error}
+          warnings={warnings}
+          fromCache={fetchResult?.fromCache}
+          onFetch={handleFetch}
           onRefresh={handleRefresh}
           onManualPaste={() => setShowManual(true)}
+          disabled={busy}
         />
-
-        {error && (
-          <div className="text-sm text-red-400 bg-red-950/40 border border-red-800/40 rounded-lg px-3 py-2">
-            Supabase error: {error}
-          </div>
-        )}
 
         {/* ── Stats row ── */}
         <div className="flex flex-wrap gap-3">
@@ -142,7 +127,7 @@ const App: React.FC = () => {
 
         {/* ── Main layout ── */}
         <div className="flex gap-5 items-start">
-          {/* Sidebar */}
+          {/* Sidebar filters */}
           <div className="w-64 flex-shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
             <FiltersPanel
               filters={filters}
@@ -157,20 +142,21 @@ const App: React.FC = () => {
           {/* Main content */}
           <div className="flex-1 min-w-0 space-y-4">
 
+            {/* Export bar */}
             {fixtures.length > 0 && (
               <ExportBar listA={listA} listB={listB} listC={listC} date={date} />
             )}
 
-            {/* Confidence legend */}
+            {/* Confidence tier legend */}
             <div className="glass-card rounded-xl px-4 py-3">
               <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-2.5">
                 Confidence Model — Tier Thresholds
               </p>
               <div className="flex flex-wrap gap-2">
-                <TierBadge label="STRONG"  range="80–100" colour="border-green-700/50 text-green-300  bg-green-950/30"  count={strongCount} />
-                <TierBadge label="WATCH"   range="70–79"  colour="border-amber-700/50 text-amber-300  bg-amber-950/30"  count={watchlistCount} />
-                <TierBadge label="LEAN"    range="60–69"  colour="border-orange-700/50 text-orange-300 bg-orange-950/30" count={leanCount} />
-                <TierBadge label="REJECT"  range="&lt;60" colour="border-red-800/50 text-red-400      bg-red-950/30" />
+                <TierBadge label="STRONG"    range="80–100" colour="border-green-700/50 text-green-300   bg-green-950/30"  count={strongCount} />
+                <TierBadge label="WATCH"     range="70–79"  colour="border-amber-700/50 text-amber-300   bg-amber-950/30"  count={watchlistCount} />
+                <TierBadge label="LEAN"      range="60–69"  colour="border-orange-700/50 text-orange-300 bg-orange-950/30" count={leanCount} />
+                <TierBadge label="REJECT"    range="&lt;60" colour="border-red-800/50  text-red-400     bg-red-950/30" />
                 <span className="ml-auto self-center text-xs text-gray-600 italic">
                   Weighted model · form proxies only
                 </span>
@@ -205,16 +191,16 @@ const App: React.FC = () => {
             {activeTab === 'listC' && (
               <BestListCard
                 fixtures={listC}
-                onDeepVerify={() => {}}
-                deepVerifying={false}
-                deepVerified={false}
+                onDeepVerify={handleDeepVerify}
+                deepVerifying={deepVerifying}
+                deepVerified={deepVerified}
               />
             )}
             {activeTab === 'listA' && (
               <FixtureTable
                 title="Full Qualifying List A — Home Win ≥ 45%"
                 fixtures={listA}
-                emptyMessage="No fixtures match List A criteria."
+                emptyMessage="No fixtures match List A criteria. Try lowering the minimum home win probability."
                 showReason
               />
             )}
@@ -222,7 +208,7 @@ const App: React.FC = () => {
               <FixtureTable
                 title="Stricter Filter B — Goals + Predicted Score + Low Risk"
                 fixtures={listB}
-                emptyMessage="No fixtures pass the stricter List B filters."
+                emptyMessage="No fixtures pass the stricter List B filters. Try relaxing some toggles."
                 showReason
                 highlightBest
               />
@@ -250,9 +236,10 @@ const App: React.FC = () => {
         </p>
       </footer>
 
+      {/* Manual paste modal */}
       {showManual && (
         <ManualPasteModal
-          onSubmit={handleManualSubmit}
+          onSubmit={handleManual}
           onClose={() => setShowManual(false)}
           date={date}
         />

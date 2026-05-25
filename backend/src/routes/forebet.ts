@@ -5,6 +5,18 @@
 // POST /api/forebet/deep-verify             — deep-verify shortlist
 // DELETE /api/forebet/cache?date=YYYY-MM-DD — clear cache for a date
 // GET  /api/forebet/robots                  — proxy Forebet robots.txt check
+//
+// ── Deployment modes ──────────────────────────────────────────────────────────
+//
+// LOCAL (bash start.sh on Mac):
+//   GET /api/forebet  → Playwright scrapes Forebet on this Mac.
+//   If SUPABASE_URL + SUPABASE_SERVICE_KEY are set in backend/.env, results are
+//   also upserted to Supabase so the Vercel deployment sees fresh data.
+//   (You can also run `npm run scrape` as a standalone CLI command.)
+//
+// VERCEL (cloud deployment):
+//   GET /api/forebet  → reads from Supabase scrape_results table.
+//   Playwright never runs on Vercel.  Run `npm run scrape` on your Mac first.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Router, Request, Response } from 'express';
@@ -13,17 +25,17 @@ import { fetchStaticHTML } from '../fetcher/cheerioParseFallback';
 import { parseForebetHTML, parseManualPaste } from '../parser/fixtureParser';
 import { deepVerifyShortlist } from '../deepVerify/deepVerifier';
 import { readCache, writeCache, clearCache } from '../fetcher/cache';
+import { supabase } from '../lib/supabase';
 import type { FetchResult } from '../types/Fixture';
 import type { Fixture } from '../types/Fixture';
-import { upsertFixtures } from '../lib/supabase';
 
 const router = Router();
 
 // ── GET /api/forebet ──────────────────────────────────────────────────────────
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const dateParam = (req.query.date as string) ?? new Date().toISOString().slice(0, 10);
-  const refresh   = req.query.refresh === 'true';
+  const dateParam      = (req.query.date as string) ?? new Date().toISOString().slice(0, 10);
+  const refresh        = req.query.refresh === 'true';
   const penaliseWomens = req.query.penaliseWomens === 'true';
 
   // Validate date
@@ -32,29 +44,74 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // Serve from cache unless refresh requested
+  // ── VERCEL MODE: read from Supabase (Playwright not available on Vercel) ──
+  const isVercel = !!process.env.VERCEL;
+
+  if (isVercel) {
+    if (!supabase) {
+      res.status(503).json({
+        error: 'Supabase is not configured on this Vercel deployment. ' +
+               'Add SUPABASE_URL and SUPABASE_SERVICE_KEY to your Vercel environment variables.',
+        manualFallback: true,
+      });
+      return;
+    }
+
+    const { data, error: dbError } = await supabase
+      .from('scrape_results')
+      .select('*')
+      .eq('date', dateParam)
+      .single();
+
+    if (dbError || !data) {
+      res.status(404).json({
+        error: `No scraped data found for ${dateParam}. ` +
+               'Run "npm run scrape" (or "npm run scrape -- ' + dateParam + '") ' +
+               'on your Mac to fetch and push this date\'s fixtures.',
+        manualFallback: true,
+      });
+      return;
+    }
+
+    const result: FetchResult = {
+      fixtures:     data.fixtures as Fixture[],
+      fetchedAt:    data.scraped_at,
+      date:         data.date,
+      totalParsed:  data.fixture_count ?? (data.fixtures as Fixture[]).length,
+      fromCache:    false,
+      method:       data.method as FetchResult['method'],
+      warnings:     data.warnings ?? [],
+    };
+
+    res.json(result);
+    return;
+  }
+
+  // ── LOCAL MODE: Playwright on Mac ─────────────────────────────────────────
+
+  // Serve from local file cache unless refresh requested
   if (!refresh) {
     const cached = readCache(dateParam);
     if (cached) {
       const result: FetchResult = {
-        fixtures: cached.fixtures,
-        fetchedAt: cached.fetchedAt,
-        date: cached.date,
+        fixtures:    cached.fixtures,
+        fetchedAt:   cached.fetchedAt,
+        date:        cached.date,
         totalParsed: cached.fixtures.length,
-        fromCache: true,
-        method: cached.method as FetchResult['method'],
-        warnings: cached.warnings,
+        fromCache:   true,
+        method:      cached.method as FetchResult['method'],
+        warnings:    cached.warnings,
       };
       res.json(result);
       return;
     }
   }
 
-  let html = '';
+  let html    = '';
   let method: FetchResult['method'] = 'playwright';
   const warnings: string[] = [];
 
-  // 1. Try Playwright (local and Vercel — @sparticuz/chromium-min on Vercel)
+  // 1. Playwright (local Mac)
   try {
     console.log(`[API] Fetching ${dateParam} via Playwright`);
     const pw = await fetchWithPlaywright(dateParam);
@@ -68,12 +125,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     console.error('[API] Playwright error:', (pwErr as Error).message);
   }
 
-  // 2. Try Cheerio static fetch (always attempted if Playwright didn't succeed)
+  // 2. Cheerio static fetch fallback (if Playwright failed)
   if (!html) {
     try {
       console.log(`[API] Fetching ${dateParam} via static HTML`);
       const cf = await fetchStaticHTML(dateParam);
-      html = cf.html;
+      html   = cf.html;
       method = 'cheerio';
       warnings.push(...cf.warnings);
     } catch (cfErr) {
@@ -84,9 +141,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
   if (!html) {
     res.status(503).json({
-      error: 'Automatic fetch failed. Please use the manual paste fallback.',
+      error:           'Automatic fetch failed. Please use the manual paste fallback.',
       warnings,
-      manualFallback: true,
+      manualFallback:  true,
     });
     return;
   }
@@ -99,21 +156,42 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
   const allFixtures: Fixture[] = [...fixtures, ...needsReview];
 
-  // Persist to cache
+  // Persist to local file cache
   writeCache(dateParam, {
-    date: dateParam,
+    date:      dateParam,
     fetchedAt: new Date().toISOString(),
-    fixtures: allFixtures,
+    fixtures:  allFixtures,
     warnings,
     method,
   });
 
+  // Also push to Supabase (if configured) so Vercel can read it immediately
+  if (supabase) {
+    supabase
+      .from('scrape_results')
+      .upsert({
+        date:          dateParam,
+        fixtures:      allFixtures,
+        method,
+        warnings,
+        scraped_at:    new Date().toISOString(),
+        fixture_count: allFixtures.length,
+      }, { onConflict: 'date' })
+      .then(({ error: sbErr }) => {
+        if (sbErr) {
+          console.warn('[API] Supabase upsert warning:', sbErr.message);
+        } else {
+          console.log(`[API] Pushed ${allFixtures.length} fixtures to Supabase for ${dateParam}.`);
+        }
+      });
+  }
+
   const result: FetchResult = {
-    fixtures: allFixtures,
-    fetchedAt: new Date().toISOString(),
-    date: dateParam,
+    fixtures:    allFixtures,
+    fetchedAt:   new Date().toISOString(),
+    date:        dateParam,
     totalParsed: allFixtures.length,
-    fromCache: false,
+    fromCache:   false,
     method,
     warnings,
   };
@@ -123,10 +201,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
 // ── POST /api/forebet/manual ──────────────────────────────────────────────────
 
-router.post('/manual', async (req: Request, res: Response): Promise<void> => {
+router.post('/manual', (req: Request, res: Response): void => {
   const { text, date, penaliseWomens } = req.body as {
-    text: string;
-    date?: string;
+    text:            string;
+    date?:           string;
     penaliseWomens?: boolean;
   };
 
@@ -139,24 +217,14 @@ router.post('/manual', async (req: Request, res: Response): Promise<void> => {
   const { fixtures, needsReview, warnings } = parseManualPaste(text, targetDate, penaliseWomens ?? false);
   const allFixtures = [...fixtures, ...needsReview];
 
-  // Write to Supabase so the frontend reads it immediately
-  let saved = 0;
-  if (allFixtures.length > 0) {
-    try {
-      saved = await upsertFixtures(allFixtures as unknown as Record<string, unknown>[], targetDate);
-    } catch (err) {
-      warnings.push(`Supabase upsert failed: ${(err as Error).message}`);
-    }
-  }
-
   const result: FetchResult = {
-    fixtures: allFixtures,
-    fetchedAt: new Date().toISOString(),
-    date: targetDate,
+    fixtures:    allFixtures,
+    fetchedAt:   new Date().toISOString(),
+    date:        targetDate,
     totalParsed: allFixtures.length,
-    fromCache: false,
-    method: 'manual',
-    warnings: [...warnings, `${saved} fixtures saved to Supabase.`],
+    fromCache:   false,
+    method:      'manual',
+    warnings,
   };
 
   res.json(result);
@@ -198,7 +266,6 @@ router.delete('/cache', (req: Request, res: Response): void => {
 });
 
 // ── GET /api/forebet/robots ───────────────────────────────────────────────────
-// Proxy fetch of Forebet robots.txt so the UI can display it.
 
 router.get('/robots', async (_req: Request, res: Response): Promise<void> => {
   try {

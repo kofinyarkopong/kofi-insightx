@@ -18,7 +18,12 @@ const Toggle: React.FC<{
 }> = ({ label, value, onChange, hint }) => (
   <label className="flex items-start gap-2.5 cursor-pointer group">
     <div className="relative mt-0.5 flex-shrink-0">
-      <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} className="sr-only" />
+      <input
+        type="checkbox"
+        checked={value}
+        onChange={e => onChange(e.target.checked)}
+        className="sr-only"
+      />
       <div className={`w-9 h-5 rounded-full transition-colors ${value ? 'bg-accent-cyan' : 'bg-navy-400'}`} />
       <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${value ? 'translate-x-4' : ''}`} />
     </div>
@@ -44,7 +49,11 @@ const SliderInput: React.FC<{
       <span className="font-bold text-accent-cyan">{value}{suffix}</span>
     </div>
     <input
-      type="range" min={min} max={max} step={step} value={value}
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
       onChange={e => onChange(Number(e.target.value))}
       className="w-full accent-brand-600 h-1.5 rounded-full bg-navy-400"
     />
@@ -59,59 +68,89 @@ const SectionHead: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </h3>
 );
 
-const FiltersPanel: React.FC<Props> = ({ filters, update, onReset, listACounts, listBCount, listCCount }) => (
-  <aside className="glass-card rounded-xl overflow-hidden">
-    <div className="px-4 py-3 border-b border-navy-400/40 flex items-center justify-between">
-      <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400">Filters</h2>
-      <button onClick={onReset} className="text-xs text-accent-cyan hover:text-cyan-300 transition-colors font-medium">
-        Reset
-      </button>
-    </div>
+const FiltersPanel: React.FC<Props> = ({ filters, update, onReset, listACounts, listBCount, listCCount }) => {
+  return (
+    <aside className="glass-card rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-navy-400/40 flex items-center justify-between">
+        <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400">Filters</h2>
+        <button
+          onClick={onReset}
+          className="text-xs text-accent-cyan hover:text-cyan-300 transition-colors font-medium"
+        >
+          Reset
+        </button>
+      </div>
 
-    <div className="grid grid-cols-3 divide-x divide-navy-400/40 border-b border-navy-400/40 text-center py-3">
-      <div className="px-2">
-        <p className="text-xl font-extrabold text-gray-100">{listACounts}</p>
-        <p className="text-xs text-gray-500 mt-0.5">List A</p>
-      </div>
-      <div className="px-2">
-        <p className="text-xl font-extrabold text-accent-blue">{listBCount}</p>
-        <p className="text-xs text-gray-500 mt-0.5">List B</p>
-      </div>
-      <div className="px-2">
-        <p className="text-xl font-extrabold text-confidence-strong">{listCCount}</p>
-        <p className="text-xs text-gray-500 mt-0.5">Best C</p>
-      </div>
-    </div>
-
-    <div className="p-4 space-y-5">
-      <section>
-        <SectionHead>Thresholds</SectionHead>
-        <div className="space-y-4">
-          <SliderInput label="Min Home Win Prob"       value={filters.minHomeWinProb}    min={40} max={80}              onChange={v => update('minHomeWinProb', v)}    suffix="%" />
-          <SliderInput label="Min Confidence (List C)" value={filters.minConfidenceScore} min={40} max={95}              onChange={v => update('minConfidenceScore', v)} suffix="/100" />
-          <SliderInput label="Best List Size"          value={filters.bestListSize}       min={3}  max={25}              onChange={v => update('bestListSize', v)}       suffix=" games" />
+      {/* List counts */}
+      <div className="grid grid-cols-3 divide-x divide-navy-400/40 border-b border-navy-400/40 text-center py-3">
+        <div className="px-2">
+          <p className="text-xl font-extrabold text-gray-100">{listACounts}</p>
+          <p className="text-xs text-gray-500 mt-0.5">List A</p>
         </div>
-      </section>
+        <div className="px-2">
+          <p className="text-xl font-extrabold text-accent-blue">{listBCount}</p>
+          <p className="text-xs text-gray-500 mt-0.5">List B</p>
+        </div>
+        <div className="px-2">
+          <p className="text-xl font-extrabold text-confidence-strong">{listCCount}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Best C</p>
+        </div>
+      </div>
 
-      <section>
-        <SectionHead>Search</SectionHead>
-        <input
-          type="text"
-          placeholder="Filter by league or team…"
-          value={filters.leagueSearch}
-          onChange={e => update('leagueSearch', e.target.value)}
-          className="w-full bg-navy-700 border border-navy-400/50 rounded-lg px-3 py-1.5 text-sm text-gray-200
-            placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-accent-cyan focus:border-accent-cyan transition-colors"
-        />
-      </section>
+      <div className="p-4 space-y-5">
+        {/* Thresholds */}
+        <section>
+          <SectionHead>Thresholds</SectionHead>
+          <div className="space-y-4">
+            <SliderInput label="Min Home Win Prob" value={filters.minHomeWinProb} min={40} max={80} onChange={v => update('minHomeWinProb', v)} suffix="%" />
+            <SliderInput label="Min Avg Goals" value={filters.minAvgGoals} min={1.5} max={4.5} step={0.1} onChange={v => update('minAvgGoals', v)} />
+            <SliderInput label="Min Confidence (List C)" value={filters.minConfidenceScore} min={40} max={95} onChange={v => update('minConfidenceScore', v)} suffix="/100" />
+            <SliderInput label="Best List Size" value={filters.bestListSize} min={3} max={15} onChange={v => update('bestListSize', v)} suffix=" games" />
+          </div>
+        </section>
 
-      <section className="space-y-3">
-        <SectionHead>Content</SectionHead>
-        <Toggle label="Hide women's fixtures"       value={filters.hideWomens}      onChange={v => update('hideWomens', v)} />
-        <Toggle label="Penalise women's (–10 score)" value={filters.penaliseWomens} onChange={v => update('penaliseWomens', v)} />
-      </section>
-    </div>
-  </aside>
-);
+        {/* Search */}
+        <section>
+          <SectionHead>Search</SectionHead>
+          <input
+            type="text"
+            placeholder="Filter by league or team…"
+            value={filters.leagueSearch}
+            onChange={e => update('leagueSearch', e.target.value)}
+            className="w-full bg-navy-700 border border-navy-400/50 rounded-lg px-3 py-1.5 text-sm text-gray-200
+              placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-accent-cyan focus:border-accent-cyan transition-colors"
+          />
+        </section>
+
+        {/* Quality filters */}
+        <section className="space-y-3">
+          <SectionHead>Quality</SectionHead>
+          <Toggle label="Upcoming only" value={filters.upcomingOnly} onChange={v => update('upcomingOnly', v)} />
+          <Toggle label="Require predicted home win" value={filters.requirePredictedHomeWin} onChange={v => update('requirePredictedHomeWin', v)} />
+          <Toggle label="Require over 2.5 expected" value={filters.requireOverTwoFive} onChange={v => update('requireOverTwoFive', v)} />
+          <Toggle label="Include low-confidence parsed" value={filters.includeLowConfidenceParsed} onChange={v => update('includeLowConfidenceParsed', v)} hint="Fixtures with parseConfidence < 60" />
+        </section>
+
+        {/* Risk exclusions */}
+        <section className="space-y-3">
+          <SectionHead>Risk Exclusions</SectionHead>
+          <Toggle label="Exclude derbies" value={filters.excludeDerbies} onChange={v => update('excludeDerbies', v)} />
+          <Toggle label="Exclude cups / second legs" value={filters.excludeCupsAndSecondLegs} onChange={v => update('excludeCupsAndSecondLegs', v)} />
+          <Toggle label="Exclude relegation traps" value={filters.excludeRelegationTraps} onChange={v => update('excludeRelegationTraps', v)} />
+          <Toggle label="Include cups (override)" value={filters.includeCups} onChange={v => update('includeCups', v)} />
+        </section>
+
+        {/* Content filters */}
+        <section className="space-y-3">
+          <SectionHead>Content</SectionHead>
+          <Toggle label="Hide youth / reserve" value={filters.hideYouthReserve} onChange={v => update('hideYouthReserve', v)} />
+          <Toggle label="Hide women's fixtures" value={filters.hideWomens} onChange={v => update('hideWomens', v)} />
+          <Toggle label="Penalise women's (–10 score)" value={filters.penaliseWomens} onChange={v => update('penaliseWomens', v)} />
+        </section>
+      </div>
+    </aside>
+  );
+};
 
 export default FiltersPanel;

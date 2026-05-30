@@ -11,7 +11,7 @@ import { useForebetData } from './hooks/useForebetData';
 import { useFilters } from './hooks/useFilters';
 
 type AppMode = 'forebet' | 'odds-scanner';
-type Tab = 'listC' | 'listA' | 'listB' | 'review';
+type Tab = 'listD' | 'listC' | 'listA' | 'listB' | 'review';
 
 // ── Stat card ──────────────────────────────────────────────────────────────────
 const StatCard: React.FC<{
@@ -57,7 +57,7 @@ const App: React.FC = () => {
     enrichStatus, enrichResult,
   } = useForebetData();
 
-  const { filters, updateFilter, resetFilters, listA, listB, listC, needsReview } =
+  const { filters, updateFilter, resetFilters, listA, listB, listC, listD, needsReview } =
     useFilters(fixtures);
 
   const busy          = ['fetching', 'expanding', 'parsing', 'deep_verifying'].includes(status);
@@ -72,11 +72,12 @@ const App: React.FC = () => {
   const watchlistCount = fixtures.filter(f => f.confidenceScore >= 70 && f.confidenceScore < 80).length;
   const leanCount      = fixtures.filter(f => f.confidenceScore >= 60 && f.confidenceScore < 70).length;
 
-  const tabs: { key: Tab; label: string; shortLabel: string; count: number }[] = [
-    { key: 'listC',  label: 'Best Shortlist',       shortLabel: 'Best',    count: listC.length     },
-    { key: 'listB',  label: 'Stricter Filter B',    shortLabel: 'List B',  count: listB.length     },
-    { key: 'listA',  label: 'Full Qualifying List', shortLabel: 'List A',  count: listA.length     },
-    { key: 'review', label: 'Needs Review',         shortLabel: 'Review',  count: needsReview.length },
+  const tabs: { key: Tab; label: string; shortLabel: string; count: number; accent?: string }[] = [
+    { key: 'listD',  label: 'List D — Odds Confirmed', shortLabel: 'List D',  count: listD.length,       accent: 'text-amber-400' },
+    { key: 'listC',  label: 'Best Shortlist',          shortLabel: 'Best',    count: listC.length     },
+    { key: 'listB',  label: 'Stricter Filter B',       shortLabel: 'List B',  count: listB.length     },
+    { key: 'listA',  label: 'Full Qualifying List',    shortLabel: 'List A',  count: listA.length     },
+    { key: 'review', label: 'Needs Review',            shortLabel: 'Review',  count: needsReview.length },
   ];
 
   return (
@@ -201,6 +202,7 @@ const App: React.FC = () => {
           <StatCard label="List A"     value={listA.length}       accent="text-accent-cyan" />
           <StatCard label="List B"     value={listB.length}       accent="text-accent-blue" />
           <StatCard label="Best C"     value={listC.length}       accent="text-confidence-strong" />
+          <StatCard label="List D 🎯"  value={listD.length}       accent="text-amber-400" sub="Odds confirmed" />
           <StatCard label="Strong"     value={strongCount}        accent="text-confidence-strong" sub="80-100" />
           <StatCard label="Watchlist"  value={watchlistCount}     accent="text-confidence-watch"  sub="70-79" />
           <StatCard label="Lean"       value={leanCount}          accent="text-confidence-lean"   sub="60-69" />
@@ -246,14 +248,18 @@ const App: React.FC = () => {
             {/* Tabs — horizontally scrollable on mobile */}
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
               <div className="flex gap-1 p-1 glass-card rounded-xl w-max sm:w-fit min-w-full sm:min-w-0">
-                {tabs.map(({ key, label, shortLabel, count }) => (
+                {tabs.map(({ key, label, shortLabel, count, accent }) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
                     className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap
                       ${activeTab === key
-                        ? 'bg-accent-cyan text-navy-900 shadow-lg shadow-cyan-900/30'
-                        : 'text-gray-500 hover:text-gray-300 hover:bg-navy-600/60'
+                        ? key === 'listD'
+                          ? 'bg-amber-400 text-navy-900 shadow-lg shadow-amber-900/30'
+                          : 'bg-accent-cyan text-navy-900 shadow-lg shadow-cyan-900/30'
+                        : accent
+                          ? `${accent} hover:bg-navy-600/60`
+                          : 'text-gray-500 hover:text-gray-300 hover:bg-navy-600/60'
                       }`}
                   >
                     <span className="sm:hidden">{shortLabel}</span>
@@ -271,6 +277,19 @@ const App: React.FC = () => {
             </div>
 
             {/* Tab content */}
+            {activeTab === 'listD' && (
+              <FixtureTable
+                title="List D — Odds Confirmed (Filter B + Flashscore Home Odds 1.01–1.55)"
+                fixtures={listD}
+                emptyMessage={
+                  listB.length === 0
+                    ? "No Filter B fixtures yet. Fetch Forebet data first."
+                    : "No List D matches — run 'npm run scrape-odds' to fetch Flashscore odds, then refetch Forebet data."
+                }
+                showReason
+                highlightBest
+              />
+            )}
             {activeTab === 'listC' && (
               <BestListCard
                 fixtures={listC}

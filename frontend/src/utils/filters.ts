@@ -84,6 +84,22 @@ export function buildListC(listB: Fixture[], f: FilterSettings): Fixture[] {
     .slice(0, f.bestListSize);
 }
 
+// ── List D ────────────────────────────────────────────────────────────────────
+// Elite shortlist: Filter B games where Flashscore home win odds are also 1.01–1.55.
+// Market confirmation — both Forebet probability AND bookmaker odds agree on a
+// strong home favourite.  Sorted by confidence score descending.
+
+export function buildListD(listB: Fixture[]): Fixture[] {
+  return listB
+    .filter(fx =>
+      fx.oddsAttached === true &&
+      fx.homeOdds1X2 !== undefined &&
+      fx.homeOdds1X2 >= 1.01 &&
+      fx.homeOdds1X2 <= 1.55
+    )
+    .sort((a, b) => b.confidenceScore - a.confidenceScore);
+}
+
 // ── Needs Review ──────────────────────────────────────────────────────────────
 // Fixtures with low parse confidence
 

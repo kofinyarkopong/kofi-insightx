@@ -121,6 +121,17 @@ const BestListCard: React.FC<Props> = ({ fixtures, onDeepVerify, deepVerifying, 
                     <span className="text-gray-400">Predicted: <strong className="text-gray-200">{fx.correctScore || '—'}</strong></span>
                     <span className="text-gray-600">Draw: {fx.drawProb}%</span>
                     {fx.odds && <span className="text-gray-600">Odds: {fx.odds}</span>}
+                    {/* Market odds from Flashscore */}
+                    {fx.oddsAttached && (
+                      <span className="flex items-center gap-1.5 bg-amber-950/40 border border-amber-800/40 rounded px-2 py-0.5">
+                        <span className="text-amber-400/60 font-medium">Mkt</span>
+                        <span className="font-bold text-amber-400">H {fx.homeOdds1X2?.toFixed(2)}</span>
+                        <span className="text-gray-600">·</span>
+                        <span className="text-gray-500">D {fx.drawOdds1X2?.toFixed(2)}</span>
+                        <span className="text-gray-600">·</span>
+                        <span className="text-amber-400/70">A {fx.awayOdds1X2?.toFixed(2)}</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Confidence bar */}

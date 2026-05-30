@@ -152,6 +152,9 @@ const OddsScannerPage: React.FC = () => {
             sortDir={sortDir}
             onSort={setSort}
             onSelect={setActiveFixture}
+            showFilterBOnly={filters.showFilterBOnly}
+            onToggleFilterB={() => updateFilter('showFilterBOnly', !filters.showFilterBOnly)}
+            filterBCount={filterBList.length}
           />
 
           {/* Disclaimer */}

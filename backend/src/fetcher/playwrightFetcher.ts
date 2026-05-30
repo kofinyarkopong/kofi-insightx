@@ -106,7 +106,7 @@ export async function fetchWithPlaywright(
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
       '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     locale: 'en-GB',
-    timezoneId: 'Europe/London',
+    timezoneId: 'UTC',   // Force GMT so Forebet renders kick-off times in UTC, not BST
     viewport: { width: 1440, height: 900 },
   });
 

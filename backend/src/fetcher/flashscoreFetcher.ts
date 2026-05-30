@@ -105,7 +105,7 @@ export async function fetchFlashscoreOdds(
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     locale: 'en-GB',
-    timezoneId: 'Europe/London',
+    timezoneId: 'UTC',   // Force GMT so Flashscore renders kick-off times in UTC, not BST
   });
   const page = await context.newPage();
 

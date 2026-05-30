@@ -6,9 +6,11 @@ import FixtureTable from './components/FixtureTable';
 import BestListCard from './components/BestListCard';
 import ManualPasteModal from './components/ManualPasteModal';
 import ExportBar from './components/ExportBar';
+import OddsScannerPage from './components/odds/OddsScannerPage';
 import { useForebetData } from './hooks/useForebetData';
 import { useFilters } from './hooks/useFilters';
 
+type AppMode = 'forebet' | 'odds-scanner';
 type Tab = 'listC' | 'listA' | 'listB' | 'review';
 
 // ── Stat card ──────────────────────────────────────────────────────────────────
@@ -44,6 +46,7 @@ const TierBadge: React.FC<{
 );
 
 const App: React.FC = () => {
+  const [appMode, setAppMode]         = useState<AppMode>('forebet');
   const [showManual, setShowManual]   = useState(false);
   const [activeTab, setActiveTab]     = useState<Tab>('listC');
   const [showFilters, setShowFilters] = useState(false);
@@ -51,6 +54,7 @@ const App: React.FC = () => {
   const {
     fixtures, status, statusMessage, error, warnings, date, fetchResult, deepVerified,
     setDate, fetch, submitManual, runDeepVerify, refreshCache,
+    enrichStatus, enrichResult,
   } = useForebetData();
 
   const { filters, updateFilter, resetFilters, listA, listB, listC, needsReview } =
@@ -96,9 +100,33 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <DateSelector date={date} onChange={setDate} disabled={busy} />
-            {/* Mobile filter toggle */}
+            {/* ── App mode switcher ── */}
+            <div className="hidden sm:flex gap-1 p-1 bg-navy-800/60 border border-navy-500/40 rounded-lg">
+              {([
+                { key: 'forebet',      label: '⚽ Forebet',      short: '⚽' },
+                { key: 'odds-scanner', label: '📊 Odds Scanner', short: '📊' },
+              ] as { key: AppMode; label: string; short: string }[]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setAppMode(key)}
+                  className={`px-3 py-1.5 rounded text-xs font-bold transition-all whitespace-nowrap
+                    ${appMode === key ? 'bg-accent-cyan text-navy-900' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Mobile mode switcher */}
             <button
+              onClick={() => setAppMode(m => m === 'forebet' ? 'odds-scanner' : 'forebet')}
+              className="sm:hidden px-2.5 py-1.5 rounded-lg border border-navy-400/60 text-gray-400 hover:text-accent-cyan text-xs font-medium transition-all"
+              title={appMode === 'forebet' ? 'Switch to Odds Scanner' : 'Switch to Forebet'}
+            >
+              {appMode === 'forebet' ? '📊' : '⚽'}
+            </button>
+            {appMode === 'forebet' && <DateSelector date={date} onChange={setDate} disabled={busy} />}
+            {/* Mobile filter toggle — Forebet mode only */}
+            {appMode === 'forebet' && <button
               onClick={() => setShowFilters(true)}
               className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-navy-400/60
                 text-gray-400 hover:text-accent-cyan hover:border-accent-cyan transition-all text-xs font-medium"
@@ -111,7 +139,7 @@ const App: React.FC = () => {
               {(listCCount => listCCount > 0
                 ? <span className="bg-accent-cyan text-navy-900 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-extrabold">{listCCount}</span>
                 : null)(listC.length)}
-            </button>
+            </button>}
           </div>
         </div>
       </header>
@@ -146,7 +174,11 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-[1700px] mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 sm:space-y-5 flex-1 w-full">
+      {/* ── Odds Scanner mode ── */}
+      {appMode === 'odds-scanner' && <OddsScannerPage />}
+
+      {/* ── Forebet mode ── */}
+      {appMode === 'forebet' && <div className="max-w-[1700px] mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 sm:space-y-5 flex-1 w-full">
 
         {/* ── Fetch panel ── */}
         <FetchPanel
@@ -159,6 +191,8 @@ const App: React.FC = () => {
           onRefresh={handleRefresh}
           onManualPaste={() => setShowManual(true)}
           disabled={busy}
+          enrichStatus={enrichStatus}
+          enrichResult={enrichResult}
         />
 
         {/* ── Stats row ── */}
@@ -272,7 +306,7 @@ const App: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ── Footer ── */}
       <footer className="mt-8 border-t border-navy-600/30 py-4 px-4">

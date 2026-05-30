@@ -42,6 +42,26 @@ CREATE POLICY "scrape_results_select"
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Usage notes
+-- ── odds_results ─────────────────────────────────────────────────────────────
+-- Stores Flashscore 1X2 odds scraped by the Mac Playwright fetcher.
+-- One row per date. Read by Vercel when the "Fetch from Flashscore" button is clicked.
+
+CREATE TABLE IF NOT EXISTS odds_results (
+  date          TEXT        PRIMARY KEY,
+  fixtures      JSONB       NOT NULL DEFAULT '[]',
+  scraped_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  fixture_count INTEGER     NOT NULL DEFAULT 0,
+  warnings      JSONB       NOT NULL DEFAULT '[]'
+);
+
+CREATE INDEX IF NOT EXISTS odds_results_scraped_at_idx ON odds_results (scraped_at DESC);
+
+ALTER TABLE odds_results ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "odds_results_select" ON odds_results;
+CREATE POLICY "odds_results_select"
+  ON odds_results FOR SELECT TO anon, authenticated USING (TRUE);
+
 -- ─────────────────────────────────────────────────────────────────────────────
 --
 -- 1. Create a Supabase project at https://supabase.com

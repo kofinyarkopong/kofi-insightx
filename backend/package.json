@@ -7,7 +7,8 @@
     "build":  "tsc",
     "start":  "node dist/server.js",
     "test":   "jest --testPathPattern=tests/",
-    "scrape": "ts-node --transpile-only -r dotenv/config src/scripts/scrape.ts"
+    "scrape":       "ts-node --transpile-only -r dotenv/config src/scripts/scrape.ts",
+    "scrape-odds":  "ts-node --transpile-only -r dotenv/config src/scripts/scrapeOdds.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.43.4",

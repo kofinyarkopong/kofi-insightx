@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import type { Fixture, FetchResult } from '../types/Fixture';
 import { fetchFixtures, submitManualPaste, deepVerify, clearCache } from '../api/forebetApi';
+import { useStandings } from './useStandings';
 
 export type FetchStatus =
   | 'idle'
@@ -31,6 +32,8 @@ const todayGMT = (): string => {
 };
 
 export function useForebetData() {
+  const { enrichForebetFixtures, enrichStatus, enrichResult, resetEnrichment } = useStandings();
+
   const [state, setState] = useState<ForebetDataState>({
     fixtures: [],
     fetchResult: null,
@@ -62,18 +65,25 @@ export function useForebetData() {
       const result = await fetchFixtures(state.date, refresh, penaliseWomens);
 
       setState(prev => ({ ...prev, statusMessage: 'Parsing fixture rows…', status: 'parsing' }));
-
-      // Small yield to let React render the parsing message
       await new Promise(r => setTimeout(r, 100));
 
+      // Initial render with proxy scores
       setState(prev => ({
         ...prev,
         fixtures: result.fixtures,
         fetchResult: result,
         status: 'complete',
-        statusMessage: `Loaded ${result.totalParsed} fixtures (${result.fromCache ? 'from cache' : result.method}).`,
+        statusMessage: `Loaded ${result.totalParsed} fixtures — enriching with live table data…`,
         warnings: result.warnings,
         error: null,
+      }));
+
+      // Enrich with real standings in the background
+      const enriched = await enrichForebetFixtures(result.fixtures);
+      setState(prev => ({
+        ...prev,
+        fixtures: enriched,
+        statusMessage: `Loaded ${result.totalParsed} fixtures (${result.fromCache ? 'from cache' : result.method}).`,
       }));
     } catch (err) {
       setState(prev => ({
@@ -166,5 +176,8 @@ export function useForebetData() {
     submitManual,
     runDeepVerify,
     refreshCache,
+    enrichStatus,
+    enrichResult,
+    resetEnrichment,
   };
 }

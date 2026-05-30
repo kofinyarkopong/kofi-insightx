@@ -7,6 +7,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import forebetRouter from './routes/forebet';
+import oddsRouter      from './routes/odds';
+import standingsRouter from './routes/standings';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -38,6 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 // ── Routes ────────────────────────────────────────────────────────────────────
 
 app.use('/api/forebet', forebetRouter);
+app.use('/api/odds',      oddsRouter);
+app.use('/api/standings', standingsRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -63,6 +67,7 @@ if (!process.env.VERCEL) {
     console.log(`  POST http://localhost:${PORT}/api/forebet/manual`);
     console.log(`  POST http://localhost:${PORT}/api/forebet/deep-verify`);
     console.log(`  DEL  http://localhost:${PORT}/api/forebet/cache?date=YYYY-MM-DD`);
+    console.log(`  GET  http://localhost:${PORT}/api/odds?date=YYYY-MM-DD`);
   });
 }
 

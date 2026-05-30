@@ -44,6 +44,19 @@ export interface Fixture {
 
   matchUrl?: string;
   deepVerified?: boolean;
+
+  // ── Live standings enrichment (populated after Football-Data.org lookup) ──
+  standingsEnriched?:       boolean;
+  homeTablePosition?:       number;   // 1 = league leader
+  homeTablePoints?:         number;
+  homeMatchesPlayed?:       number;
+  homeMatchesRemaining?:    number;
+  homeActualForm?:          string;   // e.g. "W,D,W,L,W" from standings
+  awayTablePosition?:       number;
+  awayTablePoints?:         number;
+  awayActualForm?:          string;
+  leaderPoints?:            number;   // points of the league leader
+  totalTeamsInLeague?:      number;
 }
 
 export interface FetchResult {

@@ -46,6 +46,13 @@ export interface Fixture {
   deepVerified?: boolean;
 
   // ── Live standings enrichment (populated after Football-Data.org lookup) ──
+  // ── Flashscore 1X2 odds (attached after cross-referencing) ─────────────────
+  homeOdds1X2?: number;
+  drawOdds1X2?: number;
+  awayOdds1X2?: number;
+  oddsAttached?: boolean;   // true when odds were successfully matched
+
+  // ── Live standings enrichment ────────────────────────────────────────────
   standingsEnriched?:       boolean;
   homeTablePosition?:       number;   // 1 = league leader
   homeTablePoints?:         number;
@@ -86,6 +93,10 @@ export interface FilterSettings {
   includeLowConfidenceParsed: boolean;
   leagueSearch: string;
   penaliseWomens: boolean;
+  // ── Odds filters (from Flashscore cross-reference) ──
+  minHomeOdds:     number;   // 1.00 = no filter
+  maxHomeOdds:     number;   // 0 = no filter
+  showOnlyWithOdds: boolean;
 }
 
 export const DEFAULT_FILTERS: FilterSettings = {
@@ -105,4 +116,7 @@ export const DEFAULT_FILTERS: FilterSettings = {
   includeLowConfidenceParsed: false,
   leagueSearch: '',
   penaliseWomens: false,
+  minHomeOdds:     1.00,
+  maxHomeOdds:     0,      // 0 = no upper limit
+  showOnlyWithOdds: false,
 };

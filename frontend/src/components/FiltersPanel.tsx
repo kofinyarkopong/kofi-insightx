@@ -137,6 +137,30 @@ const FiltersPanel: React.FC<Props> = ({ filters, update, onReset, listACounts, 
           />
         </section>
 
+        {/* Flashscore odds filters */}
+        <section className="space-y-3">
+          <SectionHead>Flashscore Odds</SectionHead>
+          <Toggle
+            label="Show only matches with odds"
+            value={filters.showOnlyWithOdds}
+            onChange={v => update('showOnlyWithOdds', v)}
+            hint="Hides fixtures not yet matched to Flashscore"
+          />
+          <SliderInput
+            label="Min Home Win Odds"
+            value={filters.minHomeOdds}
+            min={1.00} max={3.00} step={0.05}
+            onChange={v => update('minHomeOdds', v)}
+          />
+          <SliderInput
+            label="Max Home Win Odds"
+            value={filters.maxHomeOdds === 0 ? 3.00 : filters.maxHomeOdds}
+            min={1.10} max={3.00} step={0.05}
+            onChange={v => update('maxHomeOdds', v === 3.00 ? 0 : v)}
+            suffix={filters.maxHomeOdds === 0 ? ' (any)' : ''}
+          />
+        </section>
+
         {/* Quality filters */}
         <section className="space-y-3">
           <SectionHead>Quality</SectionHead>

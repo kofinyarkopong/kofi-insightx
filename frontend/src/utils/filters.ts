@@ -27,6 +27,12 @@ function applyGlobalToggles(fixtures: Fixture[], f: FilterSettings): Fixture[] {
         !(fx.competition ?? '').toLowerCase().includes(f.leagueSearch.toLowerCase()) &&
         !fx.homeTeam.toLowerCase().includes(f.leagueSearch.toLowerCase()) &&
         !fx.awayTeam.toLowerCase().includes(f.leagueSearch.toLowerCase())) return false;
+    // Odds filters (only applied when odds are available)
+    if (f.showOnlyWithOdds && !fx.oddsAttached) return false;
+    if (fx.oddsAttached && fx.homeOdds1X2) {
+      if (f.minHomeOdds > 1.00 && fx.homeOdds1X2 < f.minHomeOdds) return false;
+      if (f.maxHomeOdds > 0    && fx.homeOdds1X2 > f.maxHomeOdds) return false;
+    }
     return true;
   });
 }

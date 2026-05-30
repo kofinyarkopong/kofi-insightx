@@ -111,6 +111,8 @@ const FixtureTable: React.FC<Props> = ({
                 <th className="px-2 sm:px-3 py-2.5 text-center">H%</th>
                 <th className="hidden sm:table-cell px-3 py-2.5 text-center">D%</th>
                 <th className="hidden sm:table-cell px-3 py-2.5 text-center">A%</th>
+                <th className="hidden md:table-cell px-3 py-2.5 text-center text-amber-400/80">H Odds</th>
+                <th className="hidden md:table-cell px-3 py-2.5 text-center text-amber-400/80">A Odds</th>
                 <th className="px-2 sm:px-3 py-2.5 text-center">Pred</th>
                 <th className="hidden sm:table-cell px-3 py-2.5 text-center">Score</th>
                 {!compact && <th className="hidden md:table-cell px-3 py-2.5 text-center">Avg G</th>}
@@ -143,6 +145,16 @@ const FixtureTable: React.FC<Props> = ({
                       <td className="px-2 sm:px-3 py-2.5 text-center font-bold text-green-400 text-xs sm:text-sm">{fx.homeWinProb}%</td>
                       <td className="hidden sm:table-cell px-3 py-2.5 text-center text-gray-500">{fx.drawProb}%</td>
                       <td className="hidden sm:table-cell px-3 py-2.5 text-center text-red-400">{fx.awayWinProb}%</td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-center">
+                        {fx.homeOdds1X2
+                          ? <span className="font-bold text-amber-400 text-xs">{fx.homeOdds1X2.toFixed(2)}</span>
+                          : <span className="text-gray-700 text-xs">—</span>}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-center">
+                        {fx.awayOdds1X2
+                          ? <span className="font-bold text-amber-400/80 text-xs">{fx.awayOdds1X2.toFixed(2)}</span>
+                          : <span className="text-gray-700 text-xs">—</span>}
+                      </td>
                       <td className="px-2 sm:px-3 py-2.5 text-center"><PredBadge pred={fx.prediction} /></td>
                       <td className="hidden sm:table-cell px-3 py-2.5 text-center font-mono text-xs font-bold text-gray-300">{fx.correctScore || '—'}</td>
                       {!compact && (
@@ -165,8 +177,17 @@ const FixtureTable: React.FC<Props> = ({
 
                     {isExpanded && (
                       <tr className="bg-navy-700/60">
-                        <td colSpan={compact ? 9 : 12} className="px-4 py-4">
+                        <td colSpan={compact ? 9 : 14} className="px-4 py-4">
                           <div className="space-y-2.5 text-sm">
+                            {/* Flashscore 1X2 odds */}
+                            {fx.oddsAttached && (
+                              <div className="flex items-center gap-4 text-xs">
+                                <span className="text-gray-500 font-semibold uppercase tracking-wider">Flashscore Odds</span>
+                                <span className="text-amber-400 font-bold">H {fx.homeOdds1X2?.toFixed(2)}</span>
+                                <span className="text-gray-400">D {fx.drawOdds1X2?.toFixed(2)}</span>
+                                <span className="text-amber-400/70 font-bold">A {fx.awayOdds1X2?.toFixed(2)}</span>
+                              </div>
+                            )}
                             {fx.reason && (
                               <p className="text-gray-400">
                                 <span className="font-semibold text-gray-300">Reason: </span>{fx.reason}

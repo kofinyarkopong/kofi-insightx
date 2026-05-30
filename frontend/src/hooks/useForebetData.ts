@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import type { Fixture, FetchResult } from '../types/Fixture';
 import { fetchFixtures, submitManualPaste, deepVerify, clearCache } from '../api/forebetApi';
 import { useStandings } from './useStandings';
+import { fetchOddsForDate, attachOddsToFixtures } from '../utils/oddsAttacher';
 
 export type FetchStatus =
   | 'idle'
@@ -80,9 +81,14 @@ export function useForebetData() {
 
       // Enrich with real standings in the background
       const enriched = await enrichForebetFixtures(result.fixtures);
+
+      // Attach Flashscore odds (silent — skips if no odds data for this date)
+      const oddsRows  = await fetchOddsForDate(state.date);
+      const withOdds  = attachOddsToFixtures(enriched, oddsRows);
+
       setState(prev => ({
         ...prev,
-        fixtures: enriched,
+        fixtures: withOdds,
         statusMessage: `Loaded ${result.totalParsed} fixtures (${result.fromCache ? 'from cache' : result.method}).`,
       }));
     } catch (err) {

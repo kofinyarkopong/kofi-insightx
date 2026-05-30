@@ -13,7 +13,6 @@
 //   away_scoring, timezone
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { v4 as uuidv4 } from 'uuid';
 import type { OddsFixture, RawCsvRow, CsvParseResult } from '../types/OddsFixture';
 import { scoreOddsFixture } from './oddsFilters';
 
@@ -208,7 +207,7 @@ export function parseCsvUpload(
     const awayScoring = row.away_scoring ? parseInt(row.away_scoring, 10) || undefined : undefined;
 
     const raw: Omit<OddsFixture, 'pick' | 'passesFilterA' | 'passesFilterB' | 'filterAReason' | 'filterBReason' | 'notes' | 'riskFlags' | 'confidenceScore' | 'confidenceGrade' | 'oddsStrengthScore' | 'formScore' | 'scoringConsistencyScore' | 'over15Score' | 'opponentWeaknessScore' | 'leagueReliabilityScore' | 'riskPenalty'> = {
-      id:          uuidv4(),
+      id:          crypto.randomUUID(),
       date,
       timeGMT,
       timezone,
